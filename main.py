@@ -209,7 +209,6 @@ class MainFrame(wx.Frame):
 
     def RunRecord(self,evt):
         data_setup = self.leftpanel.GetData()
-        print(data_setup)
         data_record = self.rightpanel.GetData()
         mouse_evt = []
         time_idx = 1
