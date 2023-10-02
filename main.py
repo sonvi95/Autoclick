@@ -219,8 +219,6 @@ class MainFrame(wx.Frame):
         m_thread = threading.Thread(target=lambda: mouse.play(mouse_evt))
         m_thread.start()
 
-
-
 app = wx.App()
 MainFrame(None)
 app.MainLoop()
