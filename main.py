@@ -221,6 +221,7 @@ class MainFrame(wx.Frame):
         m_thread.start()
 
 
+
 app = wx.App()
 MainFrame(None)
 app.MainLoop()
