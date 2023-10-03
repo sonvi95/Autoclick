@@ -1,5 +1,6 @@
 import re
 import threading
+import time
 
 import wx
 import mouse
@@ -75,7 +76,7 @@ class LeftPanel(wx.Panel):
 
     def SetValue(self):
         self.inter_txt.SetValue('600')
-        self.stop_txt.SetValue('0')
+        self.stop_txt.SetValue('10')
         self.curclick_txt.SetValue('0')
         self.stoptime_txt.SetValue('0')
         self.curtime_txt.SetValue('0')
@@ -90,7 +91,7 @@ class LeftPanel(wx.Panel):
         curclick = self.curclick_txt.GetValue()
         stoptime = self.stoptime_txt.GetValue()
         curtime = self.curtime_txt.GetValue()
-        return {'inter':int(inter),'stop':int(stop),'curclick':int(curclick),'stoptime':int(stoptime),'curtime':int(curtime)}
+        return {'inter':int(inter),'stop':int(stop)}
 class RightPanel(wx.Panel):
     def __init__(self,parent):
         self.parent = parent
@@ -155,7 +156,7 @@ x: 131 y: 343''')
                 save_y = evt.y
 
             elif type(evt) is mouse._mouse_event.ButtonEvent:
-                # print(evt)
+                print(evt)
                 data_save+='x: '+str(save_x)+' y: '+str(save_y)+'\n'
         print(data_save)
         self.maintext.SetValue(data_save)
@@ -201,13 +202,38 @@ class MainFrame(wx.Frame):
     def StartRecode(self):
         print('StartRecode')
         mouse.hook(self.mouse_events.append)
-        keyboard.wait("Esc")
+        try:
+            keyboard.wait("Esc")
+        except:
+            print('wrong')
         mouse.unhook(self.mouse_events.append)
         print(self.mouse_events)
         self.rightpanel.UpdateData(self.mouse_events)
         self.mouse_events = []
+        self.running = 0
 
     def RunRecord(self,evt):
+        # data_setup = self.leftpanel.GetData()
+        # data_record = self.rightpanel.GetData()
+        # mouse_evt = []
+        # time_idx = 1
+        # for data in data_record:
+        #     mouse_evt.append(mouse.MoveEvent(data['x'],data['y'],time_idx))
+        #     time_idx+=data_setup['inter']/1000
+        # print(mouse_evt)
+        m_thread = threading.Thread(target=self.ReplayAction)
+        m_thread.start()
+        m_stop = threading.Thread(target=self.StopRunning)
+        m_stop.start()
+
+    def StopRunning(self):
+        try:
+            keyboard.wait("Esc")
+            self.running = 0
+        except:
+            self.running = 0
+
+    def ReplayAction(self):
         data_setup = self.leftpanel.GetData()
         data_record = self.rightpanel.GetData()
         mouse_evt = []
@@ -215,9 +241,24 @@ class MainFrame(wx.Frame):
         for data in data_record:
             mouse_evt.append(mouse.MoveEvent(data['x'],data['y'],time_idx))
             time_idx+=data_setup['inter']/1000
-        print(mouse_evt)
-        m_thread = threading.Thread(target=lambda: mouse.play(mouse_evt))
-        m_thread.start()
+        self.running = 1
+        l_max = data_setup['stop']
+        l_click = len(data_record)
+        for number in range(0, data_setup['stop']):
+            d = l_max - number-1
+            for idx,data in enumerate(data_record):
+                if self.running == 0:
+                    return
+                v = l_click - idx -1
+                val = (d*l_click+v)*data_setup['inter']
+                self.leftpanel.stoptime_txt.SetValue(str(val))
+
+                mouse.move(data['x'],data['y'])
+                mouse.click('left')
+                time.sleep(data_setup['inter']/1000)
+
+            self.leftpanel.curclick_txt.SetValue(str(number+1))
+
 
 app = wx.App()
 MainFrame(None)
