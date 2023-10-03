@@ -92,6 +92,7 @@ class LeftPanel(wx.Panel):
         stoptime = self.stoptime_txt.GetValue()
         curtime = self.curtime_txt.GetValue()
         return {'inter':int(inter),'stop':int(stop)}
+
 class RightPanel(wx.Panel):
     def __init__(self,parent):
         self.parent = parent
@@ -110,9 +111,9 @@ class RightPanel(wx.Panel):
         #count
         cnt_sizer = wx.BoxSizer(wx.HORIZONTAL)
         cnt_stt = wx.StaticText(self,label="Count")
-        cnt_txt = wx.TextCtrl(self)
+        self.cnt_txt = wx.TextCtrl(self)
         cnt_sizer.Add(cnt_stt,0,wx.ALL|wx.EXPAND,5)
-        cnt_sizer.Add(cnt_txt, 0, wx.ALL | wx.EXPAND, 5)
+        cnt_sizer.Add(self.cnt_txt, 0, wx.ALL | wx.EXPAND, 5)
         right_sizer.Add(cnt_sizer, 0, wx.EXPAND | wx.ALL, 0)
 
         #button
@@ -140,6 +141,7 @@ x: 179 y: 109
 x: 179 y: 109
 x: 131 y: 343
 x: 131 y: 343''')
+        self.cnt_txt.SetValue(str(len(re.split('\n',self.maintext.GetValue()))))
 
     def LoadData(self,evt):
         self.parent.StartRecode()
@@ -148,6 +150,7 @@ x: 131 y: 343''')
         save_x = 0
         save_y = 0
         data_save = ''
+        idx = 0
         for evt in mouse_events:
             # print(type(evt))
             if type(evt) is mouse._mouse_event.MoveEvent:
@@ -158,7 +161,9 @@ x: 131 y: 343''')
             elif type(evt) is mouse._mouse_event.ButtonEvent:
                 print(evt)
                 data_save+='x: '+str(save_x)+' y: '+str(save_y)+'\n'
+                idx+=1
         print(data_save)
+        self.cnt_txt.SetValue(str(idx))
         self.maintext.SetValue(data_save)
 
     def GetData(self):
