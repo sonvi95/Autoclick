@@ -15,6 +15,20 @@ class LeftPanel(wx.Panel):
         coor_stt = wx.StaticText(self,label="Coordinate")
         left_sizer.Add(coor_stt,0,wx.EXPAND|wx.ALL,10)
 
+        #xy
+        xy_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        x_sts = wx.StaticText(self,label="x: ")
+        self.x_txt = wx.TextCtrl(self,size=(50,-1),style = wx.TE_READONLY)
+        y_sts = wx.StaticText(self, label="y: ")
+        self.y_txt = wx.TextCtrl(self,size=(50,-1),style = wx.TE_READONLY)
+
+        xy_sizer.Add(x_sts,0,wx.ALL,5)
+        xy_sizer.Add(self.x_txt, 1, wx.ALL, 5)
+        xy_sizer.Add(y_sts, 0, wx.ALL, 5)
+        xy_sizer.Add(self.y_txt, 1, wx.ALL, 5)
+
+        left_sizer.Add(xy_sizer, 0, wx.EXPAND | wx.ALL, 10)
+
         #Time Setting
         time_stt = wx.StaticText(self,label="Time Setting")
         left_sizer.Add(time_stt,0,wx.EXPAND|wx.ALL,10)
@@ -28,25 +42,25 @@ class LeftPanel(wx.Panel):
 
         #stop after
         stop_stt = wx.StaticText(self,label="Stop After")
-        self.stop_txt = wx.TextCtrl(self)
+        self.stop_txt = wx.TextCtrl(self,style = wx.TE_READONLY)
         self.stop_txt.Bind(wx.EVT_KEY_DOWN, self.UpdateText)
         stop_unit = wx.StaticText(self,label = "Clicks")
 
         #current
         curclick_stt = wx.StaticText(self,label="Current")
-        self.curclick_txt = wx.TextCtrl(self)
+        self.curclick_txt = wx.TextCtrl(self,style = wx.TE_READONLY)
         self.curclick_txt.Bind(wx.EVT_KEY_DOWN, self.UpdateText)
         curclick_unit = wx.StaticText(self,label = "Clicks")
 
         #stop after
         stoptime_stt = wx.StaticText(self,label="Stop After")
-        self.stoptime_txt = wx.TextCtrl(self)
+        self.stoptime_txt = wx.TextCtrl(self,style = wx.TE_READONLY)
         self.stoptime_txt.Bind(wx.EVT_KEY_DOWN, self.UpdateText)
         stoptime_unit = wx.StaticText(self,label = "mins")
 
         #current
         curtime_stt = wx.StaticText(self,label="Current")
-        self.curtime_txt = wx.TextCtrl(self)
+        self.curtime_txt = wx.TextCtrl(self,style = wx.TE_READONLY)
         self.curtime_txt.Bind(wx.EVT_KEY_DOWN, self.UpdateText)
         curtime_unit = wx.StaticText(self,label = "")
 
@@ -85,6 +99,13 @@ class LeftPanel(wx.Panel):
         if evt.GetKeyCode()>=48 and evt.GetKeyCode()<=57:
             print(evt.GetKeyCode())
             evt.Skip()
+        elif evt.GetKeyCode() == wx.WXK_BACK:
+            evt.Skip()
+
+    def SetXY(self,x,y):
+        self.x_txt.SetValue(str(x))
+        self.y_txt.SetValue(str(y))
+
     def GetData(self):
         inter = self.inter_txt.GetValue()
         stop = self.stop_txt.GetValue()
@@ -105,13 +126,13 @@ class RightPanel(wx.Panel):
         right_sizer.Add(xylist_stt,0,wx.EXPAND|wx.ALL,10)
 
         #main text
-        self.maintext= wx.TextCtrl(self,style = wx.TE_MULTILINE)
+        self.maintext= wx.TextCtrl(self,style = wx.TE_MULTILINE )
         right_sizer.Add(self.maintext, 1, wx.EXPAND | wx.ALL, 10)
 
         #count
         cnt_sizer = wx.BoxSizer(wx.HORIZONTAL)
         cnt_stt = wx.StaticText(self,label="Count")
-        self.cnt_txt = wx.TextCtrl(self)
+        self.cnt_txt = wx.TextCtrl(self,style = wx.TE_READONLY)
         cnt_sizer.Add(cnt_stt,0,wx.ALL|wx.EXPAND,5)
         cnt_sizer.Add(self.cnt_txt, 0, wx.ALL | wx.EXPAND, 5)
         right_sizer.Add(cnt_sizer, 0, wx.EXPAND | wx.ALL, 0)
@@ -133,18 +154,20 @@ class RightPanel(wx.Panel):
 
         self.SetSizer(right_sizer)
 
-        self.maintext.SetValue('''x: 277 y: 369
-x: 277 y: 369
-x: 282 y: 185
-x: 282 y: 185
-x: 179 y: 109
-x: 179 y: 109
-x: 131 y: 343
-x: 131 y: 343''')
-        self.cnt_txt.SetValue(str(len(re.split('\n',self.maintext.GetValue()))))
+#         self.maintext.SetValue('''x: 277 y: 369
+# x: 277 y: 369
+# x: 282 y: 185
+# x: 282 y: 185
+# x: 179 y: 109
+# x: 179 y: 109
+# x: 131 y: 343
+# x: 131 y: 343
+# ''')
+        self.cnt_txt.SetValue('0')
 
     def LoadData(self,evt):
-        self.parent.StartRecode()
+        load_thead = threading.Thread(target=self.parent.StartRecode)
+        load_thead.start()
 
     def UpdateData(self,mouse_events):
         save_x = 0
@@ -159,9 +182,9 @@ x: 131 y: 343''')
                 save_y = evt.y
 
             elif type(evt) is mouse._mouse_event.ButtonEvent:
-                print(evt)
-                data_save+='x: '+str(save_x)+' y: '+str(save_y)+'\n'
-                idx+=1
+                if evt.event_type == 'up' and evt.button == 'left':
+                    data_save+='x: '+str(save_x)+' y: '+str(save_y)+'\n'
+                    idx+=1
         print(data_save)
         self.cnt_txt.SetValue(str(idx))
         self.maintext.SetValue(data_save)
@@ -171,14 +194,28 @@ x: 131 y: 343''')
         list_data = re.split('\n',data)
         list_return = []
         for line in list_data:
-            mathdata = re.match('x:\s+(\d+)\s+y:\s+(\d+)',line)
+            mathdata = re.match('x:\s+([0-9-]+)\s+y:\s+([0-9-]+)',line)
             if mathdata:
                 list_return.append({'x':int(mathdata.groups()[0]),'y':int(mathdata.groups()[1])})
         return list_return
+
 class MainFrame(wx.Frame):
     def __init__(self,parent):
+
+        self.running = 0
+
         wx.Frame.__init__(self,parent,title='Auto Click')
         self.SetSize(500,500)
+
+        #####################
+        menubar = wx.MenuBar()
+
+        save_menu = wx.Menu()
+        menubar.Append(save_menu,'Save')
+
+        self.SetMenuBar(menubar)
+
+        #####################
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         top_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -194,6 +231,7 @@ class MainFrame(wx.Frame):
         start_btn = wx.Button(self,label='Start')
         start_btn.Bind(wx.EVT_BUTTON,self.RunRecord)
         cancel_btn = wx.Button(self,label='Cancel')
+        cancel_btn.Bind(wx.EVT_BUTTON,self.StopRunning)
         bottom_sizer.Add(start_btn,1,wx.ALL|wx.CENTER,10)
         bottom_sizer.Add(cancel_btn, 1, wx.ALL | wx.CENTER, 10)
         main_sizer.Add(bottom_sizer, 0, wx.ALL | wx.CENTER , 0)
@@ -204,13 +242,70 @@ class MainFrame(wx.Frame):
 
         self.mouse_events = []
 
+        self.app_running = 1
+
+        self.Bind(wx.EVT_CLOSE,self.CloseFrame)
+
+        boad_thead = threading.Thread(target=self.CheckPress)
+        boad_thead.start()
+
+        mouse_thead = threading.Thread(target=self.CheckMouse)
+        mouse_thead.start()
+
+    def StopRunning(self,evt):
+        self.running = 0
+
+    def CloseFrame(self,evt):
+        self.app_running = 0
+        self.running = 0
+        evt.Skip()
+
+    def CheckMouse(self):
+        while True:
+            # print(mouse.get_position())
+            pos = mouse.get_position()
+            self.leftpanel.SetXY(pos[0],pos[1])
+            time.sleep(0.01)
+
+            if self.app_running == 0:
+                break
+
+    def CheckPress(self):
+        val = ''
+        while True:
+            tem = keyboard.get_hotkey_name()
+            if tem == '':
+                val = ''
+                time.sleep(0.05)
+            else:
+                if val == '':
+                    val = tem
+                    print('val: ',val)
+                    if val == 'esc':
+                        self.running = 0
+                    elif val == 'space':
+                        pos = mouse.get_position()
+                        self.rightpanel.maintext.AppendText('x: '+str(pos[0])+' y: '+str(pos[1])+'\n')
+                        self.rightpanel.cnt_txt.SetValue(str(int(self.rightpanel.cnt_txt.GetValue())+1))
+                    elif val == 'delete':
+                        self.rightpanel.maintext.SetValue('')
+                        self.rightpanel.cnt_txt.SetValue('0')
+                    elif val == 'pause':
+                        if self.running == 1:
+                            self.running = 2
+                    time.sleep(0.05)
+                else:
+                    time.sleep(0.1)
+
+            if self.app_running == 0:
+                break
+
     def StartRecode(self):
         print('StartRecode')
+        self.running = 1
         mouse.hook(self.mouse_events.append)
-        try:
-            keyboard.wait("Esc")
-        except:
-            print('wrong')
+        while self.running != 0:
+            time.sleep(0.01)
         mouse.unhook(self.mouse_events.append)
         print(self.mouse_events)
         self.rightpanel.UpdateData(self.mouse_events)
@@ -218,25 +313,14 @@ class MainFrame(wx.Frame):
         self.running = 0
 
     def RunRecord(self,evt):
-        # data_setup = self.leftpanel.GetData()
-        # data_record = self.rightpanel.GetData()
-        # mouse_evt = []
-        # time_idx = 1
-        # for data in data_record:
-        #     mouse_evt.append(mouse.MoveEvent(data['x'],data['y'],time_idx))
-        #     time_idx+=data_setup['inter']/1000
-        # print(mouse_evt)
-        m_thread = threading.Thread(target=self.ReplayAction)
-        m_thread.start()
-        m_stop = threading.Thread(target=self.StopRunning)
-        m_stop.start()
+        print(self.running)
+        if self.running == 2:
+            self.running=1
+        else:
+            m_thread = threading.Thread(target=self.ReplayAction)
+            m_thread.start()
 
-    def StopRunning(self):
-        try:
-            keyboard.wait("Esc")
-            self.running = 0
-        except:
-            self.running = 0
+
 
     def ReplayAction(self):
         data_setup = self.leftpanel.GetData()
@@ -252,8 +336,12 @@ class MainFrame(wx.Frame):
         for number in range(0, data_setup['stop']):
             d = l_max - number-1
             for idx,data in enumerate(data_record):
+                while self.running == 2:
+                    time.sleep(0.1)
+
                 if self.running == 0:
                     return
+
                 v = l_click - idx -1
                 val = (d*l_click+v)*data_setup['inter']
                 self.leftpanel.stoptime_txt.SetValue(str(val))
