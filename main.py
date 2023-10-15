@@ -261,6 +261,7 @@ class MainFrame(wx.Frame):
 
         self.SetSizer(main_sizer)
 
+
         self.Show()
 
         self.mouse_events = []
