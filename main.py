@@ -8,7 +8,6 @@ import keyboard
 
 class LeftPanel(wx.Panel):
     def __init__(self,parent):
-        self.parent = parent
         wx.Panel.__init__(self,parent)
         # self.SetBackgroundColour(wx.BLUE)
         left_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -84,19 +83,10 @@ class LeftPanel(wx.Panel):
         left_sizer.Add(radio_sizer, 0, wx.CENTRE | wx.ALL, 0)
 
         checkbox = wx.CheckBox(self, -1, "Window always on Top")
-        # checkbox.SetValue(True)
-        checkbox.Bind(wx.EVT_CHECKBOX,self.SetWinTop,checkbox)
         left_sizer.Add(checkbox, 0, wx.CENTER | wx.ALL, 0)
 
         self.SetSizer(left_sizer)
         self.SetValue()
-
-    def SetWinTop(self,evt):
-        obj = evt.GetEventObject().GetValue()
-        if obj:
-            self.parent.SetWindowStyle(wx.STAY_ON_TOP)
-        else:
-            self.parent.SetWindowStyle(wx.DEFAULT_FRAME_STYLE)
 
     def SetValue(self):
         self.inter_txt.SetValue('600')
@@ -150,7 +140,7 @@ class RightPanel(wx.Panel):
         #button
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         save_btn = wx.Button(self,label='Save')
-        save_btn.Bind(wx.EVT_BUTTON,self.SaveFile)
+
         load_btn = wx.Button(self,label='Load')
         load_btn.Bind(wx.EVT_BUTTON, self.LoadData)
         btn_sizer.Add(save_btn,1,wx.ALL|wx.CENTER,10)
@@ -175,15 +165,6 @@ class RightPanel(wx.Panel):
 # ''')
         self.cnt_txt.SetValue('0')
 
-    def SaveFile(self,evt):
-        fdlg = wx.FileDialog(self, "Input setting file path", wildcard="config files(*.config)|*.config", style=wx.FD_SAVE)
-
-        if fdlg.ShowModal() == wx.ID_OK:
-            print(fdlg.GetPath())
-            f = open(fdlg.GetPath(), "w+")
-            f.write(self.maintext.GetValue())
-            f.close()
-
     def LoadData(self,evt):
         load_thead = threading.Thread(target=self.parent.StartRecode)
         load_thead.start()
@@ -202,7 +183,7 @@ class RightPanel(wx.Panel):
 
             elif type(evt) is mouse._mouse_event.ButtonEvent:
                 if evt.event_type == 'up' and evt.button == 'left':
-                    data_save+='x: '+str(save_x)+'      y: '+str(save_y)+'\n'
+                    data_save+='x: '+str(save_x)+' y: '+str(save_y)+'\n'
                     idx+=1
         print(data_save)
         self.cnt_txt.SetValue(str(idx))
@@ -224,17 +205,13 @@ class MainFrame(wx.Frame):
         self.running = 0
 
         wx.Frame.__init__(self,parent,title='Auto Click')
-        self.SetSize(500,600)
+        self.SetSize(500,500)
 
         #####################
         menubar = wx.MenuBar()
 
         save_menu = wx.Menu()
-        menubar.Append(save_menu,'File')
-
-        newitem = wx.MenuItem(save_menu, wx.ID_NEW, text="Open")
-        save_menu.Append(newitem)
-
+        menubar.Append(save_menu,'Save')
 
         self.SetMenuBar(menubar)
 
@@ -255,19 +232,11 @@ class MainFrame(wx.Frame):
         start_btn.Bind(wx.EVT_BUTTON,self.RunRecord)
         cancel_btn = wx.Button(self,label='Cancel')
         cancel_btn.Bind(wx.EVT_BUTTON,self.StopRunning)
-
-        close = wx.Button(self,label='Close')
-        close.Bind(wx.EVT_BUTTON,self.CloseFrameAll)
-
         bottom_sizer.Add(start_btn,1,wx.ALL|wx.CENTER,10)
         bottom_sizer.Add(cancel_btn, 1, wx.ALL | wx.CENTER, 10)
-        bottom_sizer.Add(close, 1, wx.ALL | wx.CENTER, 10)
-
-
         main_sizer.Add(bottom_sizer, 0, wx.ALL | wx.CENTER , 0)
 
         self.SetSizer(main_sizer)
-
 
         self.Show()
 
@@ -276,33 +245,20 @@ class MainFrame(wx.Frame):
         self.app_running = 1
 
         self.Bind(wx.EVT_CLOSE,self.CloseFrame)
-        self.Bind(wx.EVT_MENU,self.OpenFile)
 
         boad_thead = threading.Thread(target=self.CheckPress)
         boad_thead.start()
 
         mouse_thead = threading.Thread(target=self.CheckMouse)
         mouse_thead.start()
-        # self.SetWindowStyle(wx.STAY_ON_TOP)
-
-    def OpenFile(self,event):
-        dlg = wx.FileDialog(self, "OPEN EMG FILE", wildcard="TXT Files(*.config)|*.config",style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
-        if dlg.ShowModal() == wx.ID_OK:
-            f = open(dlg.GetPath(), "r")
-            self.rightpanel.maintext.SetValue(f.read())
-            f.close()
 
     def StopRunning(self,evt):
         self.running = 0
 
     def CloseFrame(self,evt):
-
-        evt.Skip()
-
-    def CloseFrameAll(self,evt):
         self.app_running = 0
         self.running = 0
-        self.Destroy()
+        evt.Skip()
 
     def CheckMouse(self):
         while True:
@@ -329,9 +285,7 @@ class MainFrame(wx.Frame):
                         self.running = 0
                     elif val == 'space':
                         pos = mouse.get_position()
-                        data_tem = self.rightpanel.maintext.GetValue().strip() + '\nx: '+str(pos[0])+'      y: '+str(pos[1])
-                        print(data_tem.encode())
-                        self.rightpanel.maintext.SetValue(data_tem.strip())
+                        self.rightpanel.maintext.AppendText('x: '+str(pos[0])+' y: '+str(pos[1])+'\n')
                         self.rightpanel.cnt_txt.SetValue(str(int(self.rightpanel.cnt_txt.GetValue())+1))
                     elif val == 'delete':
                         self.rightpanel.maintext.SetValue('')
