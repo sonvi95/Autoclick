@@ -1,4 +1,4 @@
 keyboard == 0.13.5
 mouse == 0.7.1
 wxPython == 4.2.1
-pyinstaller == 6.1.0
+pyinstaller == 5.4.1

@@ -84,7 +84,7 @@ class LeftPanel(wx.Panel):
         left_sizer.Add(radio_sizer, 0, wx.CENTRE | wx.ALL, 0)
 
         checkbox = wx.CheckBox(self, -1, "Window always on Top")
-        checkbox.SetValue(True)
+        # checkbox.SetValue(True)
         checkbox.Bind(wx.EVT_CHECKBOX,self.SetWinTop,checkbox)
         left_sizer.Add(checkbox, 0, wx.CENTER | wx.ALL, 0)
 
@@ -255,8 +255,15 @@ class MainFrame(wx.Frame):
         start_btn.Bind(wx.EVT_BUTTON,self.RunRecord)
         cancel_btn = wx.Button(self,label='Cancel')
         cancel_btn.Bind(wx.EVT_BUTTON,self.StopRunning)
+
+        close = wx.Button(self,label='Close')
+        close.Bind(wx.EVT_BUTTON,self.CloseFrameAll)
+
         bottom_sizer.Add(start_btn,1,wx.ALL|wx.CENTER,10)
         bottom_sizer.Add(cancel_btn, 1, wx.ALL | wx.CENTER, 10)
+        bottom_sizer.Add(close, 1, wx.ALL | wx.CENTER, 10)
+
+
         main_sizer.Add(bottom_sizer, 0, wx.ALL | wx.CENTER , 0)
 
         self.SetSizer(main_sizer)
@@ -276,7 +283,7 @@ class MainFrame(wx.Frame):
 
         mouse_thead = threading.Thread(target=self.CheckMouse)
         mouse_thead.start()
-        self.SetWindowStyle(wx.STAY_ON_TOP)
+        # self.SetWindowStyle(wx.STAY_ON_TOP)
 
     def OpenFile(self,event):
         dlg = wx.FileDialog(self, "OPEN EMG FILE", wildcard="TXT Files(*.config)|*.config",style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
@@ -289,9 +296,13 @@ class MainFrame(wx.Frame):
         self.running = 0
 
     def CloseFrame(self,evt):
+
+        evt.Skip()
+
+    def CloseFrameAll(self,evt):
         self.app_running = 0
         self.running = 0
-        evt.Skip()
+        self.Destroy()
 
     def CheckMouse(self):
         while True:
